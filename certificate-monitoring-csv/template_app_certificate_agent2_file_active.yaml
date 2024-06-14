@@ -278,8 +278,15 @@ zabbix_export:
               trends: '0'
               value_type: CHAR
               description: 'The version of the encoded certificate.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.version
               master_item:
                 key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
             - uuid: e20f64fe062a40969d3d156fc656fa70
               name: 'Certificate details for {#CERT_URL}'
               type: ZABBIX_ACTIVE

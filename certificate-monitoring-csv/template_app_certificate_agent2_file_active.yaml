@@ -1,0 +1,312 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: c22750ed2faf473abd622b9b7b984ea4
+      template: 'Website certificate by Zabbix agent 2 file'
+      name: 'Website certificate by Zabbix agent 2 file'
+      description: |
+        The template to monitor TLS/SSL certificate on the website by Zabbix agent 2
+        
+        Zabbix agent 2 with the WebCertificate plugin requests certificate using the web.certificate.get key and returns JSON with certificate attributes.
+        
+        It requires the userparameters setup for the discovery and a csv file deployed with the hostnames to monitor.
+        
+      vendor:
+        name: Zabbix
+        version: 7.0-0
+      groups:
+        - name: Templates/Applications
+      discovery_rules:
+        - uuid: b218d1a7bac64f3a8b4d33740760d339
+          name: 'Discover web certificates'
+          type: ZABBIX_ACTIVE
+          key: web.certificate.discovery
+          delay: 1h
+          lifetime: 30d
+          description: 'Discovery rule for web certificates'
+          item_prototypes:
+            - uuid: d9fcc286c0e8455c9e6c2f35b3c917e2
+              name: '{#CERT_URL}: Subject alternative name'
+              type: DEPENDENT
+              key: 'cert.alternative_names[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: TEXT
+              description: 'The subject alternative name extension allows identities to be bound to the subject of the certificate.  These identities may be included in addition to or in place of the identity in the subject field of the certificate.  Defined options include an Internet electronic mail address, a DNS name, an IP address, and a Uniform Resource Identifier (URI).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.alternative_names
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: 7e0f4a2a9bb641dfb152f241772a173d
+              name: '{#CERT_URL}: Issuer'
+              type: DEPENDENT
+              key: 'cert.issuer[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.issuer
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: cd10d34d8f9e4658a21038241278c015
+              name: '{#CERT_URL}: Last validation status'
+              type: DEPENDENT
+              key: 'cert.message[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: TEXT
+              description: 'Last check result message.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.result.message
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: edcf644ea8094a968fa98a5b82328cfe
+              name: '{#CERT_URL}: Expires on'
+              type: DEPENDENT
+              key: 'cert.not_after[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              units: unixtime
+              description: 'The date on which the certificate validity period ends.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.not_after.timestamp
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+              trigger_prototypes:
+                - uuid: 91ab117764674c6b834efd946f9c2100
+                  expression: '(last(/Website certificate by Zabbix agent 2 file/cert.not_after[{#CERT_URL}]) - now()) / 86400 < {$CERT.EXPIRY.WARN}'
+                  name: 'SSL certificate expires soon'
+                  event_name: 'SSL certificate expires soon (less than {$CERT.EXPIRY.WARN} days)'
+                  priority: WARNING
+                  description: 'The SSL certificate should be updated or it will become untrusted.'
+                  dependencies:
+                    - name: 'SSL certificate is invalid'
+                      expression: 'find(/Website certificate by Zabbix agent 2 file/cert.validation[{#CERT_URL}],,"like","invalid")=1'
+                  tags:
+                    - tag: scope
+                      value: notice
+                - uuid: ebdf948055d94ec78a07fe06eb35cec8
+                  expression: '(last(/Website certificate by Zabbix agent 2 file/cert.not_after[{#CERT_URL}]) - now()) / 86400 < {$CERT.EXPIRY.CRIT}'
+                  name: 'SSL certificate expires very soon'
+                  event_name: 'SSL certificate expires soon (less than {$CERT.EXPIRY.CRIT} days)'
+                  priority: HIGH
+                  description: 'The SSL certificate should be updated or it will become untrusted.'
+                  dependencies:
+                    - name: 'SSL certificate is invalid'
+                      expression: 'find(/Website certificate by Zabbix agent 2 file/cert.validation[{#CERT_URL}],,"like","invalid")=1'
+                  tags:
+                    - tag: scope
+                      value: notice
+            - uuid: b25d183f274648389de771a684ddbebd
+              name: '{#CERT_URL}: Valid from'
+              type: DEPENDENT
+              key: 'cert.not_before[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              units: unixtime
+              description: 'The date on which the certificate validity period begins.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.not_before.timestamp
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: d64da99fd98e4ccfa303f20a8c4d25cf
+              name: '{#CERT_URL}: Public key algorithm'
+              type: DEPENDENT
+              key: 'cert.public_key_algorithm[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The digital signature algorithm is used to verify the signature of a certificate.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.public_key_algorithm
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: 341fe4b04fd34b8c98621d8652497ffa
+              name: '{#CERT_URL}: Serial number'
+              type: DEPENDENT
+              key: 'cert.serial_number[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The serial number is a positive integer assigned by the CA to each certificate. It is unique for each certificate issued by a given CA. Non-conforming CAs may issue certificates with serial numbers that are negative or zero.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.serial_number
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: 2193e1f2bf254df9bab60c1e8afe9b75
+              name: '{#CERT_URL}: Fingerprint'
+              type: DEPENDENT
+              key: 'cert.sha1_fingerprint[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The Certificate Signature (SHA1 Fingerprint or Thumbprint) is the hash of the entire certificate in DER form.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.sha1_fingerprint
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+              trigger_prototypes:
+                - uuid: ec2f6b6f1a974c158b387d5325aaf87c
+                  expression: 'last(/Website certificate by Zabbix agent 2 file/cert.sha1_fingerprint[{#CERT_URL}]) <> last(/Website certificate by Zabbix agent 2 file/cert.sha1_fingerprint[{#CERT_URL}],#2)'
+                  name: 'Fingerprint has changed'
+                  event_name: 'Fingerprint has changed (new version: {ITEM.VALUE})'
+                  priority: INFO
+                  description: |
+                    The SSL certificate fingerprint has changed. If you did not update the certificate, it may mean your certificate has been hacked. Acknowledge to close the problem manually.
+                    There could be multiple valid certificates on some installations. In this case, the trigger will have a false positive. You can ignore it or disable the trigger.
+                  tags:
+                    - tag: scope
+                      value: notice
+            - uuid: d45c3b7044864c3dac3f7607b25a05ae
+              name: '{#CERT_URL}: Signature algorithm'
+              type: DEPENDENT
+              key: 'cert.signature_algorithm[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The algorithm identifier for the algorithm used by the CA to sign the certificate.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.signature_algorithm
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: 5b98acc3254d4262823ef64a7f554984
+              name: '{#CERT_URL}: Subject'
+              type: DEPENDENT
+              key: 'cert.subject[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: TEXT
+              description: 'The field identifies the entity associated with the public key stored in the subject public key field.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.x509.subject
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+            - uuid: 4e74127348b04cb19b5ed27a6c86ece5
+              name: '{#CERT_URL}: Validation result'
+              type: DEPENDENT
+              key: 'cert.validation[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The certificate validation result. Possible values: valid/invalid/valid-but-self-signed'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.result.value
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+              tags:
+                - tag: component
+                  value: cert
+              trigger_prototypes:
+                - uuid: 715cbf83e3d94400b26c848ce9163b5a
+                  expression: 'find(/Website certificate by Zabbix agent 2 file/cert.validation[{#CERT_URL}],,"like","invalid")=1'
+                  name: 'SSL certificate is invalid'
+                  priority: HIGH
+                  description: 'SSL certificate has expired or it is issued for another domain.'
+                  tags:
+                    - tag: scope
+                      value: security
+            - uuid: 9d092aeec24b41e8b1f97683d2a3ec59
+              name: '{#CERT_URL}: Version'
+              type: DEPENDENT
+              key: 'cert.version[{#CERT_URL}]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The version of the encoded certificate.'
+              master_item:
+                key: 'web.certificate.get[{#CERT_URL}]'
+            - uuid: e20f64fe062a40969d3d156fc656fa70
+              name: 'Certificate details for {#CERT_URL}'
+              type: ZABBIX_ACTIVE
+              key: 'web.certificate.get[{#CERT_URL}]'
+              delay: 1h
+              history: 7d
+              trends: '0'
+              value_type: TEXT
+              description: 'Returns the JSON with attributes of a certificate of the requested site.'
+              tags:
+                - tag: component
+                  value: cert
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+      tags:
+        - tag: class
+          value: software
+        - tag: target
+          value: certificate
+      macros:
+        - macro: '{$CERT.EXPIRY.CRIT}'
+          value: '15'
+        - macro: '{$CERT.EXPIRY.WARN}'
+          value: '45'
+          description: 'Number of days until the certificate expires.'
+        - macro: '{$CERT.WEBSITE.PORT}'
+          value: '443'
+          description: 'The TLS/SSL port number of the website.'

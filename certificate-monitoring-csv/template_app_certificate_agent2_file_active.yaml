@@ -98,27 +98,29 @@ zabbix_export:
               tags:
                 - tag: component
                   value: cert
+                - tag: component
+                  value: cert-expires
               trigger_prototypes:
                 - uuid: 91ab117764674c6b834efd946f9c2100
                   expression: '(last(/Website certificate by Zabbix agent 2 file/cert.not_after[{#CERT_URL}]) - now()) / 86400 < {$CERT.EXPIRY.WARN}'
-                  name: 'SSL certificate expires soon'
-                  event_name: 'SSL certificate expires soon (less than {$CERT.EXPIRY.WARN} days)'
+                  name: '{#CERT_URL}: SSL certificate expires soon'
+                  event_name: '{#CERT_URL}: SSL certificate expires soon (less than {$CERT.EXPIRY.WARN} days)'
                   priority: WARNING
                   description: 'The SSL certificate should be updated or it will become untrusted.'
                   dependencies:
-                    - name: 'SSL certificate is invalid'
+                    - name: '{#CERT_URL}: SSL certificate is invalid'
                       expression: 'find(/Website certificate by Zabbix agent 2 file/cert.validation[{#CERT_URL}],,"like","invalid")=1'
                   tags:
                     - tag: scope
                       value: notice
                 - uuid: ebdf948055d94ec78a07fe06eb35cec8
                   expression: '(last(/Website certificate by Zabbix agent 2 file/cert.not_after[{#CERT_URL}]) - now()) / 86400 < {$CERT.EXPIRY.CRIT}'
-                  name: 'SSL certificate expires very soon'
-                  event_name: 'SSL certificate expires soon (less than {$CERT.EXPIRY.CRIT} days)'
+                  name: '{#CERT_URL}: SSL certificate expires very soon'
+                  event_name: '{#CERT_URL}: SSL certificate expires soon (less than {$CERT.EXPIRY.CRIT} days)'
                   priority: HIGH
                   description: 'The SSL certificate should be updated or it will become untrusted.'
                   dependencies:
-                    - name: 'SSL certificate is invalid'
+                    - name: '{#CERT_URL}: SSL certificate is invalid'
                       expression: 'find(/Website certificate by Zabbix agent 2 file/cert.validation[{#CERT_URL}],,"like","invalid")=1'
                   tags:
                     - tag: scope
@@ -197,7 +199,7 @@ zabbix_export:
               trigger_prototypes:
                 - uuid: ec2f6b6f1a974c158b387d5325aaf87c
                   expression: 'last(/Website certificate by Zabbix agent 2 file/cert.sha1_fingerprint[{#CERT_URL}]) <> last(/Website certificate by Zabbix agent 2 file/cert.sha1_fingerprint[{#CERT_URL}],#2)'
-                  name: 'Fingerprint has changed'
+                  name: '{#CERT_URL}: Fingerprint has changed'
                   event_name: 'Fingerprint has changed (new version: {ITEM.VALUE})'
                   priority: INFO
                   description: |
@@ -263,7 +265,7 @@ zabbix_export:
               trigger_prototypes:
                 - uuid: 715cbf83e3d94400b26c848ce9163b5a
                   expression: 'find(/Website certificate by Zabbix agent 2 file/cert.validation[{#CERT_URL}],,"like","invalid")=1'
-                  name: 'SSL certificate is invalid'
+                  name: '{#CERT_URL}: SSL certificate is invalid'
                   priority: HIGH
                   description: 'SSL certificate has expired or it is issued for another domain.'
                   tags:

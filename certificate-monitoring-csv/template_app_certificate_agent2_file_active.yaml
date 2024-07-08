@@ -200,7 +200,7 @@ zabbix_export:
                 - uuid: ec2f6b6f1a974c158b387d5325aaf87c
                   expression: 'last(/Website certificate by Zabbix agent 2 file/cert.sha1_fingerprint[{#CERT_URL}]) <> last(/Website certificate by Zabbix agent 2 file/cert.sha1_fingerprint[{#CERT_URL}],#2)'
                   name: '{#CERT_URL}: Fingerprint has changed'
-                  event_name: 'Fingerprint has changed (new version: {ITEM.VALUE})'
+                  event_name: '{#CERT_URL}: Fingerprint has changed (new version: {ITEM.VALUE})'
                   priority: INFO
                   description: |
                     The SSL certificate fingerprint has changed. If you did not update the certificate, it may mean your certificate has been hacked. Acknowledge to close the problem manually.
